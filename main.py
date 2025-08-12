@@ -1,80 +1,94 @@
 import streamlit as st
 import random
 from datetime import date
+import requests
+from streamlit_lottie import st_lottie
 
-# ⭐️ 화려한 CSS
-def local_css(css):
-    st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+# Lottie 애니메이션 JSON을 url에서 불러오는 함수
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+# 화려한 CSS
+def local_css(css_text):
+    st.markdown(f'<style>{css_text}</style>', unsafe_allow_html=True)
+
 
 custom_css = """
 body {
-    background: linear-gradient(120deg, #9fd2f6 0%, #f6a2c0 100%);
+    background: linear-gradient(120deg, #79f1a4, #0e5cad);
+    color: #f0f8ff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .stApp {
     background: transparent !important;
 }
 .header {
-    font-family: 'Segoe UI', 'Pretendard', sans-serif;
-    font-weight: bold;
-    font-size: 2.3em;
-    letter-spacing: 0.04em;
+    font-weight: 800;
+    font-size: 3em;
     text-align: center;
-    background: linear-gradient(90deg, #f6a2c0, #9fd2f6, #fffbbc, #a3fdbb);
+    background: linear-gradient(90deg, #ff8177, #66a6ff, #89f7fe);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 0.2em;
-    animation: gradient 3s ease-in-out infinite;
+    margin-bottom: 0.5em;
+    animation: gradient 4s ease-in-out infinite;
+    background-size: 300% 300%;
 }
 @keyframes gradient {
-    0% {background-position:0%; }
-    100% {background-position:100%;}
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
 }
-.zodiac-card {
-    background: linear-gradient(120deg, #fffbbc 0%, #a3fdbb 100%);
-    border-radius: 18px;
-    padding: 24px 20px;
-    box-shadow: 0 6px 20px rgba(246,162,192,0.08);
-    margin: 2em auto 1em auto;
-    max-width: 420px;
-    text-align: center;
-    transition: box-shadow 0.3s;
+.card {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 450px;
+    margin: 0 auto 30px auto;
+    box-shadow: 0 0 40px 10px rgba(255, 255, 255, 0.1);
 }
-.zodiac-card:hover {
-    box-shadow: 0 12px 40px rgba(159,210,246,0.2);
-}
-.zodiac-name {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin: 0.2em 0;
+.zodiac-title {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin-bottom: 0.25em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em;
 }
 .zodiac-emoji {
-    font-size: 3em;
-    margin-bottom: 0.2em;
-    animation: twinkle 2.8s infinite;
+    font-size: 2.8em;
 }
-@keyframes twinkle {
-    5% { transform: scale(1.2); }
-    10% { transform: scale(1); }
+.horoscope-text {
+    font-size: 1.3em;
+    line-height: 1.5em;
+    margin-top: 10px;
+    color: #dce9ff;
+    text-align: center;
+    font-weight: 400;
 }
-.zodiac-horoscope {
-    font-size: 1.2em;
-    margin-top: 0.7em;
-    color: #444;
+.date {
+    text-align: center;
+    font-size: 1em;
+    opacity: 0.7;
+    margin-bottom: 15px;
+}
+.lottie-container {
+    text-align: center;
 }
 .footer {
-    padding: 0.7em;
-    background: #fff7fc;
-    border-radius: 14px;
-    margin: 2em auto 0 auto;
-    color: #a45ca0;
     text-align: center;
-    font-size:1em;
-    box-shadow: 0 2px 18px rgba(170,70,160,0.06);
+    margin-top: 3em;
+    font-size: 1em;
+    color: #d0d7ff;
 }
 """
+
 local_css(custom_css)
 
-# 별자리 정보 및 emoji
+# 별자리 데이터
 zodiac_info = {
     "물병자리": {"emoji":"♒️", "date":"1/20~2/18"},
     "물고기자리": {"emoji":"♓️", "date":"2/19~3/20"},
@@ -90,7 +104,7 @@ zodiac_info = {
     "염소자리": {"emoji":"♑️", "date":"12/25~1/19"},
 }
 
-# 예시 운세 메시지
+# 각 별자리별 운세 메시지
 horoscopes = {
     "물병자리": [
         "새로운 아이디어가 빛나는 하루! 창의력을 적극적으로 발휘하세요.",
@@ -154,36 +168,44 @@ horoscopes = {
     ]
 }
 
-st.markdown('<div class="header">✨ 별자리별 오늘의 운세 ✨</div>', unsafe_allow_html=True)
-st.write("궁금한 별자리를 선택해보세요. 아름다운 카드와 함께 오늘의 운세를 안내합니다!")
+st.markdown('<div class="header">✨ Ohaasa 별자리 오늘의 운세 ✨</div>', unsafe_allow_html=True)
+st.write("별자리를 선택하시면 멋진 카드와 함께 오늘의 운세와 풍선 터지는 애니메이션이 나타납니다!")
 
+# 별자리 선택
 zodiac = st.selectbox(
     "별자리를 선택하세요",
-    list(zodiac_info.keys()),
-    index=random.randint(0,11)
+    list(zodiac_info.keys())
 )
 
-# 오늘 날짜 정보
+# 오늘 날짜
 today_str = date.today().strftime("%Y년 %m월 %d일")
 
 if zodiac:
-    info = zodiac_info[zodiac]
-    emoji = info["emoji"]
-    period = info["date"]
-    horoscope_str = random.choice(horoscopes[zodiac])
+    # Lottie 풍선 터지는 애니메이션 URL (예시)
+    balloon_pop_url = "https://assets8.lottiefiles.com/packages/lf20_YXD37q.json" # 풍선 터지는 애니메이션
+    lottie_balloon = load_lottieurl(balloon_pop_url)
+
+    # 운세 메시지 선택
+    horoscope_text = random.choice(horoscopes[zodiac])
+
     st.markdown(
         f"""
-        <div class="zodiac-card">
-            <div class="zodiac-emoji">{emoji}</div>
-            <div class="zodiac-name">{zodiac} ({period})</div>
-            <div style="color:#888; margin-bottom:0.6em;">{today_str}</div>
-            <div class="zodiac-horoscope">{horoscope_str}</div>
+        <div class="card">
+            <div class="zodiac-title">
+                <span class="zodiac-emoji">{zodiac_info[zodiac]['emoji']}</span>
+                {zodiac} ({zodiac_info[zodiac]['date']})
+            </div>
+            <div class="date">{today_str}</div>
+            <div class="horoscope-text">{horoscope_text}</div>
         </div>
         """,
         unsafe_allow_html=True
     )
+    st.markdown('<div class="lottie-container">', unsafe_allow_html=True)
+    st_lottie(lottie_balloon, height=300, width=300, key="balloon_anim")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown(
-    '<div class="footer">💡 별자리 운세는 재미로 보는 콘텐츠입니다. 당신의 하루가 더욱 반짝이길 기원합니다!</div>',
+    '<div class="footer">💡 이 운세는 재미로 보는 콘텐츠입니다. 매일 행운이 가득하길 바랍니다!</div>',
     unsafe_allow_html=True
 )
