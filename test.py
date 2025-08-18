@@ -1,57 +1,36 @@
 import streamlit as st
+import random
 
-st.set_page_config(page_title="이상형 연예인 월드컵", page_icon="🌟")
+st.set_page_config(page_title="감성 상담 챗봇", page_icon="🌱")
 
-# 연예인 데이터: 이름과 이미지 URL (공식/위키피디아 사진 사용 예시)
-celebrities = [
-    {"name": "아이유", "img": "https://upload.wikimedia.org/wikipedia/commons/3/39/IU_-_LOVE_POEM_album_promo_2.png"},
-    {"name": "수지", "img": "https://upload.wikimedia.org/wikipedia/commons/8/85/Suzy_at_a_fansigning_event_in_2019.png"},
-    {"name": "박보검", "img": "https://upload.wikimedia.org/wikipedia/commons/6/67/Park_Bogum_TV_hosts.png"},
-    {"name": "차은우", "img": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Cha_Eun-woo_at_the_Bulgari_Aurora_Awards_2022_%281%29.png"},
-    {"name": "뷔", "img": "https://upload.wikimedia.org/wikipedia/commons/e/e2/V_-_BTS_-_LOVE_YOURSELF_Speak_Yourself_in_London.png"},
-    {"name": "임영웅", "img": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Lim_Young-woong_in_2023.png"},
-    {"name": "제니", "img": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Jennie_at_LVMH_Awards_2023.png"},
-    {"name": "한소희", "img": "https://upload.wikimedia.org/wikipedia/commons/6/69/Han_So_heea.png"},
+# 위로 메시지 리스트(간단 예시, 마음에 드는 문장 추가 가능)
+comfort_messages = [
+    "당신의 감정은 소중해요. 오늘을 잘 견디는 것만으로도 충분히 잘하고 있습니다.",
+    "힘든 순간이 오면 스스로를 꼭 안아주세요. 당신은 혼자가 아닙니다.",
+    "마음이 지칠 때 잠시 숨을 쉬어도 괜찮아요.",
+    "누군가에게 털어놓고 싶은 생각이 있다면 용기 내어 표현해보세요.",
+    "지금 느끼는 감정은 언젠가 지나가요. 당신의 하루가 더 따스해지길 바라요.",
+    "오늘도 수고했어요! 잠깐이라도 자신을 칭찬하고 힘내세요.",
+    "모든 존재는 소중하니까, 당신도 분명히 소중해요.",
+    "마음이 아프다면 잠시 쉴 자격이 충분해요.",
+    "어떤 선택도 옳을 수 있고, 실수해도 괜찮아요.",
+    "지금의 당신, 충분히 사랑받을 가치가 있어요."
 ]
 
-def run_tournament(candidates):
-    round = 1
-    while len(candidates) > 1:
-        st.markdown(f"### {len(candidates)}강 Round {round}")
-        winners = []
-        for i in range(0, len(candidates), 2):
-            c1 = candidates[i]
-            c2 = candidates[i+1]
-            col1, col2 = st.columns(2)
-            with col1:
-                st.image(c1["img"], width=220)
-                st.write(f"**{c1['name']}**")
-            with col2:
-                st.image(c2["img"], width=220)
-                st.write(f"**{c2['name']}**")
-            pick = st.radio("이상형으로 선택!", [c1["name"], c2["name"]], key=f"{round}-{i}")
-            winners.append(c1 if pick == c1["name"] else c2)
-            st.markdown("---")
-        candidates = winners
-        round += 1
-    return candidates[0]
+st.title("🌱 감성 상담 챗봇")
+st.write("마음이 힘들거나, 위로가 필요할 때 기분이나 고민을 편하게 입력해보세요.")
 
-st.title("🌟 이상형 연예인 월드컵")
-st.write("사진과 함께 연예인을 보며 토너먼트를 통해 나의 최종 이상형을 뽑아보세요!")
+user_input = st.text_area("지금 고민이나 기분을 자유롭게 적어주세요.", "")
 
-finalist = run_tournament(celebrities)
-
-st.markdown(f"""
-## 🎉 당신의 이상형은?
-<div style='display:flex; align-items:center; justify-content:center; font-size:2em; color:#e69cb1; margin-top:0.5em;'>
-  <img src="{finalist['img']}" width="180" style="border-radius:16px; margin-right:16px;" />
-  <b>{finalist['name']}</b>
-</div>
-""", unsafe_allow_html=True)
+if user_input:
+    st.markdown("---")
+    st.subheader("상담 도우미의 메시지")
+    msg = random.choice(comfort_messages)
+    st.write(f"💌 {msg}")
 
 st.markdown("""
 ---
-<div style='text-align:center; color:gray; font-size:small; margin-top:2em;'>
-※ 결과는 재미로 하는 개인 선호 투표입니다.
+<div style='text-align:center; color:gray; margin-top:2em; font-size:small;'>
+이 앱은 따뜻한 위로와 감성적 상담을 위해 만들어졌으며, 전문적인 의료 상담은 아닙니다.<br>진심으로 힘든 경우에는 주변 전문가와도 상담해보세요.
 </div>
 """, unsafe_allow_html=True)
