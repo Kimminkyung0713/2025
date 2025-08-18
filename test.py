@@ -3,7 +3,7 @@ import pandas as pd
 
 st.set_page_config(page_title="윤리적 딜레마 체험", page_icon="🤔")
 
-# 딜레마 상황 예시
+# 딜레마 상황 리스트
 dilemmas = [
     {
         "title": "트롤리 딜레마",
@@ -11,7 +11,7 @@ dilemmas = [
         "choices": [
             "선로를 바꿔 1명을 희생하고 5명을 구한다",
             "선로를 그냥 두고 5명이 희생되는 것을 본다"
-        ]
+        ],
     },
     {
         "title": "익명 고발",
@@ -19,50 +19,55 @@ dilemmas = [
         "choices": [
             "익명으로 신고한다",
             "무시하고 넘어간다"
-        ]
+        ],
     },
-    # 필요한 만큼 추가 가능
 ]
 
-if "result_df" not in st.session_state:
-    st.session_state["result_df"] = pd.DataFrame(columns=["dilemma", "choice"])
+# 세션 초기화: 결과 저장소
+if "result_data" not in st.session_state:
+    st.session_state.result_data = []
 
-st.markdown("<h1 style='text-align:center; color:#536dfe;'>💡 윤리적 딜레마 체험 앱</h1>", unsafe_allow_html=True)
-st.write("실제와 비슷한 딜레마 상황 속에서 선택을 해보고, 모두의 선택 비율도 실시간으로 확인해보세요.")
+st.title("💡 윤리적 딜레마 체험 앱")
+st.write("현실과 비슷한 딜레마 상황에서 자신의 선택을 하고, 다른 사람들의 선택 비율도 확인해보세요.")
 
 # 딜레마 선택
 dilemma_titles = [d["title"] for d in dilemmas]
-selected_index = st.selectbox("궁금한 상황을 골라보세요.", range(len(dilemma_titles)), format_func=lambda x: dilemma_titles[x])
-chosen = dilemmas[selected_index]
+selected_idx = st.selectbox("관심 있는 상황을 선택하세요", options=range(len(dilemma_titles)), format_func=lambda x: dilemma_titles[x])
 
-st.header(f"🚦 {chosen['title']}")
-st.write(chosen["question"])
-user_choice = st.radio("당신의 선택은?", chosen["choices"])
+current_dilemma = dilemmas[selected_idx]
 
-user_feedback = st.text_area("이 선택을 하게 된 이유나 소감을 간단히 남겨보세요 (선택사항).", "")
+st.header(f"🚦 {current_dilemma['title']}")
+st.write(current_dilemma["question"])
 
-col1, col2 = st.columns([1,3])
-with col1:
-    if st.button("제출"):
-        st.session_state["result_df"] = st.session_state["result_df"].append(
-            {"dilemma": chosen["title"], "choice": user_choice}, ignore_index=True)
-        st.success("의견이 기록되었습니다!")
+user_choice = st.radio("당신의 선택은?", options=current_dilemma["choices"])
 
-with col2:
-    df = st.session_state["result_df"]
-    dilemma_df = df[df['dilemma'] == chosen['title']]
-    if not dilemma_df.empty:
-        chart_data = dilemma_df['choice'].value_counts()
-        st.bar_chart(chart_data)
-    else:
-        st.info("아직 결과가 없습니다. 첫 번째로 응답해보세요!")
+user_feedback = st.text_area("이 선택을 한 이유나 느낌을 적어주세요 (선택사항)", "")
 
-st.markdown(
-    """
-    <div style="margin-top:2em; text-align:center; color:#888;">
-        ⚖️ 윤리적 딜레마는 정답이 없으며, 다양한 고민과 의견이 모두 존중받아야 합니다.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+if st.button("제출"):
+    if user_choice:
+        # 결과 저장 (딜레마 제목, 선택, 피드백)
+        st.session_state.result_data.append({
+            "dilemma": current_dilemma["title"],
+            "choice": user_choice,
+            "feedback": user_feedback,
+        })
+        st.success("응답이 기록되었습니다!")
 
+# 선택 결과 시각화
+import pandas as pd
+
+results_df = pd.DataFrame(st.session_state.result_data)
+filtered_df = results_df[results_df["dilemma"] == current_dilemma["title"]]
+
+if not filtered_df.empty:
+    choice_counts = filtered_df['choice'].value_counts()
+    st.bar_chart(choice_counts)
+else:
+    st.info("아직 결과가 없습니다. 첫 번째 응답자가 되어주세요!")
+
+st.markdown("""
+---
+<div style='text-align:center; color:gray; font-size:small; margin-top:2em;'>
+⚖️ 윤리적 딜레마에는 정답이 없으며, 다양한 의견이 존중받아야 합니다.
+</div>
+""", unsafe_allow_html=True)
