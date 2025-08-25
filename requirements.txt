@@ -1,6 +1,1 @@
 streamlit
-streamlit-lottie
-requests
-pip install pandas plotly --upgrade
-pip uninstall plotly pandas
-pip install pandas plotly
