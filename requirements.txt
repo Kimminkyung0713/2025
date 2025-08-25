@@ -3,3 +3,5 @@ streamlit-lottie
 requests
 pip install -r requirements.txt
 pip install pandas plotly --upgrade
+pip show pandas
+pip show plotly
