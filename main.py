@@ -1,17 +1,19 @@
 import streamlit as st
 import requests
 import pandas as pd
+from datetime import datetime
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 
-st.set_page_config(page_title="실시간 날씨 & 미세먼지 대시보드 🎈", layout="wide")
+st.set_page_config(page_title="실시간 날씨&미세먼지", layout="wide")
 
-st.title("🌤 오늘 & 내일의 실시간 날씨·미세먼지 정보")
+st.title("🌤 오늘과 내일의 실시간 날씨·미세먼지 대시보드")
 
+# OpenWeatherMap API 설정 (본인의 API 키로 교체)
 API_KEY = "여기에_본인_API_키_입력하세요"
 BASE_URL = "https://api.openweathermap.org/data/2.5/onecall"
-lat = 37.5665
-lon = 126.9780
+
+# 서울 좌표
+lat, lon = 37.5665, 126.9780
 
 params = {
     "lat": lat,
@@ -22,109 +24,81 @@ params = {
     "lang": "kr"
 }
 
-weather_res = requests.get(BASE_URL, params=params)
-weather_data = weather_res.json()
+res = requests.get(BASE_URL, params=params)
+data = res.json()
 
-pm10 = 45
-pm25 = 28
-
-def parse_daily_data(day_data):
+def parse_daily(day):
     return {
-        "날짜": datetime.fromtimestamp(day_data['dt']).strftime('%Y-%m-%d'),
-        "최저기온(°C)": day_data['temp']['min'],
-        "최고기온(°C)": day_data['temp']['max'],
-        "날씨": day_data['weather'][0]['description'],
-        "습도(%)": day_data['humidity'],
-        "바람속도(m/s)": day_data['wind_speed'],
+        "날짜": datetime.fromtimestamp(day["dt"]).strftime("%Y-%m-%d"),
+        "최고기온": day["temp"]["max"],
+        "최저기온": day["temp"]["min"],
+        "날씨": day["weather"][0]["description"],
+        "습도": day["humidity"],
+        "바람": day["wind_speed"],
     }
 
-today_data = parse_daily_data(weather_data['daily'][0])
-tomorrow_data = parse_daily_data(weather_data['daily'][1])
+today = parse_daily(data["daily"][0])
+tomorrow = parse_daily(data["daily"][1])
 
 col1, col2 = st.columns(2)
 with col1:
-    st.subheader("오늘의 날씨")
-    st.write(f"날짜: {today_data['날짜']}")
-    st.write(f"최저기온: {today_data['최저기온(°C)']} °C")
-    st.write(f"최고기온: {today_data['최고기온(°C)']} °C")
-    st.write(f"날씨: {today_data['날씨']}")
-    st.write(f"습도: {today_data['습도(%)']} %")
-    st.write(f"바람: {today_data['바람속도(m/s)']} m/s")
-
+    st.subheader("오늘 날씨")
+    for k,v in today.items():
+        st.write(f"{k}: {v}")
 with col2:
-    st.subheader("내일의 날씨")
-    st.write(f"날짜: {tomorrow_data['날짜']}")
-    st.write(f"최저기온: {tomorrow_data['최저기온(°C)']} °C")
-    st.write(f"최고기온: {tomorrow_data['최고기온(°C)']} °C")
-    st.write(f"날씨: {tomorrow_data['날씨']}")
-    st.write(f"습도: {tomorrow_data['습도(%)']} %")
-    st.write(f"바람: {tomorrow_data['바람속도(m/s)']} m/s")
+    st.subheader("내일 날씨")
+    for k,v in tomorrow.items():
+        st.write(f"{k}: {v}")
 
 st.markdown("---")
 
-st.subheader("현재 미세먼지 정보 (서울)")
-aqi_level = ""
-if pm10 <= 30:
-    aqi_level = "좋음"
-elif pm10 <= 80:
-    aqi_level = "보통"
-elif pm10 <= 150:
-    aqi_level = "나쁨"
+# 미세먼지 예시 데이터 (실제 API 연동 또는 공공데이터 사용 권장)
+pm10 = 55  # PM10 농도
+pm25 = 30  # PM2.5 농도
+
+st.subheader("서울 미세먼지 정보")
+pm10_level = "좋음" if pm10 <= 30 else "보통" if pm10 <= 80 else "나쁨" if pm10 <= 150 else "매우 나쁨"
+st.write(f"미세먼지 PM10: {pm10} µg/m³ ({pm10_level})")
+st.write(f"초미세먼지 PM2.5: {pm25} µg/m³")
+
+# 미세먼지 변화 그래프
+dates = [today["날짜"], tomorrow["날짜"]]
+pm10_vals = [pm10, pm10+10]
+pm25_vals = [pm25, pm25+5]
+
+fig = go.Figure()
+fig.add_trace(go.Bar(name="PM10", x=dates, y=pm10_vals))
+fig.add_trace(go.Bar(name="PM2.5", x=dates, y=pm25_vals))
+fig.update_layout(barmode='group', yaxis_title='농도 (µg/m³)')
+st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("---")
+
+# 생활 팁 자동 추천
+st.subheader("🌟 오늘의 생활 팁")
+tips = []
+if pm10 > 80:
+    tips.append("미세먼지가 나쁠 것으로 예상됩니다. 외출 시 마스크 착용을 권장합니다.")
 else:
-    aqi_level = "매우 나쁨"
+    tips.append("오늘은 미세먼지가 보통 수준입니다. 야외 활동에 무리가 없습니다.")
 
-st.write(f"미세먼지 (PM10): {pm10} µg/m³ - {aqi_level}")
-st.write(f"초미세먼지 (PM2.5): {pm25} µg/m³")
+if today["최고기온"] > 30:
+    tips.append("무더운 날씨이니 물을 충분히 섭취하세요.")
+elif today["최고기온"] < 10:
+    tips.append("기온이 낮으니 따뜻하게 옷를 입으세요.")
 
-# 미세먼지 농도 변화 그래프
-dates = [today_data["날짜"], tomorrow_data["날짜"]]
-pm10_values = [pm10, pm10 + 10]
-pm25_values = [pm25, pm25 + 5]
-
-fig_pm = go.Figure()
-fig_pm.add_trace(go.Bar(x=dates, y=pm10_values, name="미세먼지 (PM10)"))
-fig_pm.add_trace(go.Bar(x=dates, y=pm25_values, name="초미세먼지 (PM2.5)"))
-fig_pm.update_layout(barmode='group', yaxis_title="농도 (μg/m³)")
-st.subheader("미세먼지 농도 변화 그래프")
-st.plotly_chart(fig_pm)
-
-# 기온 변화 그래프
-max_temps = [today_data["최고기온(°C)"], tomorrow_data["최고기온(°C)"]]
-min_temps = [today_data["최저기온(°C)"], tomorrow_data["최저기온(°C)"]]
-
-fig_temp = go.Figure()
-fig_temp.add_trace(go.Scatter(x=dates, y=max_temps, mode='lines+markers', name="최고기온 (°C)"))
-fig_temp.add_trace(go.Scatter(x=dates, y=min_temps, mode='lines+markers', name="최저기온 (°C)"))
-fig_temp.update_layout(yaxis_title="기온 (°C)")
-st.subheader("기온 변화 그래프")
-st.plotly_chart(fig_temp)
+for tip in tips:
+    st.write("- " + tip)
 
 st.markdown("---")
 
-if st.button("생활 팁 보기 🎈"):
-    st.balloons()
-    st.subheader("🌟 오늘의 생활 꿀팁 🌟")
-    tips = []
-    if aqi_level in ["나쁨", "매우 나쁨"]:
-        tips.append("외출 시 마스크를 꼭 착용하세요.")
-        tips.append("환기는 자주 하지만, 실내 공기 질 관리에 신경 쓰세요.")
-    else:
-        tips.append("외출하기 좋은 날씨입니다. 가벼운 산책을 추천해요!")
-
-    if today_data["최고기온(°C)"] >= 30:
-        tips.append("더운 날씨이니 충분한 수분을 섭취하세요.")
-    elif today_data["최고기온(°C)"] <= 10:
-        tips.append("날씨가 쌀쌀하니 따뜻하게 입으세요.")
-
-    for tip in tips:
-        st.write(f"- {tip}")
-
+# 지도에 서울 위치 표시
 st.subheader("서울 위치 지도")
-seoul_map = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-st.map(seoul_map, zoom=10)
+map_df = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+st.map(map_df, zoom=11)
 
 st.markdown("""
 ---
-⚠️ 본 서비스는 OpenWeatherMap 및 공공 미세먼지 API를 활용합니다.  
-실제 API 키와 URL을 반드시 대체하여 사용하세요.
+⚠️ OpenWeatherMap API 키는 반드시 본인의 것으로 교체해서 사용하세요.  
+미세먼지 데이터는 예시이며 실제 공공 데이터 API를 연동하는 것이 좋습니다.
 """)
