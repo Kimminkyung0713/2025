@@ -1,18 +1,15 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px 
+import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="실시간 날씨 & 미세먼지 대시보드 🎈", layout="wide")
 
 st.title("🌤 오늘 & 내일의 실시간 날씨·미세먼지 정보")
 
-# ====================
-# API 키 및 기본 설정 (본인의 API 키로 교체하세요)
 API_KEY = "여기에_본인_API_키_입력하세요"
 BASE_URL = "https://api.openweathermap.org/data/2.5/onecall"
-
 lat = 37.5665
 lon = 126.9780
 
@@ -28,9 +25,8 @@ params = {
 weather_res = requests.get(BASE_URL, params=params)
 weather_data = weather_res.json()
 
-# 미세먼지 데이터 예시 (실제 API 연동 필요)
-pm10 = 45  # 미세먼지 (PM10)
-pm25 = 28  # 초미세먼지 (PM2.5)
+pm10 = 45
+pm25 = 28
 
 def parse_daily_data(day_data):
     return {
@@ -80,30 +76,33 @@ else:
 st.write(f"미세먼지 (PM10): {pm10} µg/m³ - {aqi_level}")
 st.write(f"초미세먼지 (PM2.5): {pm25} µg/m³")
 
-df_pm = pd.DataFrame({
-    "날짜": [today_data["날짜"], tomorrow_data["날짜"]],
-    "미세먼지(PM10)": [pm10, pm10 + 10],
-    "초미세먼지(PM2.5)": [pm25, pm25 + 5],
-})
+# 미세먼지 농도 변화 그래프
+dates = [today_data["날짜"], tomorrow_data["날짜"]]
+pm10_values = [pm10, pm10 + 10]
+pm25_values = [pm25, pm25 + 5]
 
-df_temp = pd.DataFrame({
-    "날짜": [today_data["날짜"], tomorrow_data["날짜"]],
-    "최고기온(°C)": [today_data["최고기온(°C)"], tomorrow_data["최고기온(°C)"]],
-    "최저기온(°C)": [today_data["최저기온(°C)"], tomorrow_data["최저기온(°C)"]],
-})
-
+fig_pm = go.Figure()
+fig_pm.add_trace(go.Bar(x=dates, y=pm10_values, name="미세먼지 (PM10)"))
+fig_pm.add_trace(go.Bar(x=dates, y=pm25_values, name="초미세먼지 (PM2.5)"))
+fig_pm.update_layout(barmode='group', yaxis_title="농도 (μg/m³)")
 st.subheader("미세먼지 농도 변화 그래프")
-fig_pm = px.bar(df_pm, x="날짜", y=["미세먼지(PM10)", "초미세먼지(PM2.5)"], barmode='group', labels={"value": "농도(μg/m³)"})
 st.plotly_chart(fig_pm)
 
+# 기온 변화 그래프
+max_temps = [today_data["최고기온(°C)"], tomorrow_data["최고기온(°C)"]]
+min_temps = [today_data["최저기온(°C)"], tomorrow_data["최저기온(°C)"]]
+
+fig_temp = go.Figure()
+fig_temp.add_trace(go.Scatter(x=dates, y=max_temps, mode='lines+markers', name="최고기온 (°C)"))
+fig_temp.add_trace(go.Scatter(x=dates, y=min_temps, mode='lines+markers', name="최저기온 (°C)"))
+fig_temp.update_layout(yaxis_title="기온 (°C)")
 st.subheader("기온 변화 그래프")
-fig_temp = px.line(df_temp, x="날짜", y=["최고기온(°C)", "최저기온(°C)"], markers=True)
 st.plotly_chart(fig_temp)
 
 st.markdown("---")
 
 if st.button("생활 팁 보기 🎈"):
-    st.balloons()  # 여기에 풍선 터지는 효과
+    st.balloons()
     st.subheader("🌟 오늘의 생활 꿀팁 🌟")
     tips = []
     if aqi_level in ["나쁨", "매우 나쁨"]:
