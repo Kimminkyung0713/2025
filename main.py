@@ -1,43 +1,48 @@
 import streamlit as st
-import requests
-from datetime import datetime
 
-st.title("👗 날씨 기반 옷차림 추천기")
+st.title("🌍 나라별 교육 정보 탐색기")
 
-# OpenWeatherMap API 키 입력 (자신의 키로 교체)
-API_KEY = "여기에_본인_API_키_입력하세요"
-BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
-
-# 서울 좌표
-lat, lon = 37.5665, 126.9780
-
-params = {
-    "lat": lat,
-    "lon": lon,
-    "appid": API_KEY,
-    "units": "metric",
-    "lang": "kr"
+education_data = {
+    "대한민국": {
+        "교육 수준": "높음 (세계 상위권)",
+        "학제": "초등(6년), 중등(3년), 고등(3년)",
+        "최근 이슈": "디지털 교육 확대, 교육 격차 해소 노력",
+    },
+    "미국": {
+        "교육 수준": "높음 (세계 상위권)",
+        "학제": "초등(5-6년), 중등(3-4년), 고등(2-4년, 주별 상이)",
+        "최근 이슈": "원격 수업 활성화, 교육 불평등 해소",
+    },
+    "일본": {
+        "교육 수준": "높음",
+        "학제": "초등(6년), 중등(3년), 고등(3년)",
+        "최근 이슈": "코딩 교육 의무화, 유아교육 강화",
+    },
+    "독일": {
+        "교육 수준": "높음",
+        "학제": "초등(4년), 중등(5~6년), 직업학교 및 대학교 과정 다양",
+        "최근 이슈": "직업교육과 이공계 교육 강화",
+    },
+    "인도": {
+        "교육 수준": "중간",
+        "학제": "초등(5년), 중등(3년), 고등(2년)",
+        "최근 이슈": "기초 교육 보급 확대, 디지털 교육 인프라 개발",
+    },
 }
 
-res = requests.get(BASE_URL, params=params)
-data = res.json()
+country = st.selectbox("나라를 선택하세요", list(education_data.keys()))
 
-if res.status_code == 200:
-    temp = data["main"]["temp"]
-    weather_desc = data["weather"][0]["description"]
-    st.write(f"현재 서울 날씨: {weather_desc}, 온도: {temp}°C")
+info = education_data.get(country, {})
 
-    st.subheader("오늘의 옷차림 추천")
-    if temp >= 28:
-        st.write("가볍고 시원한 반팔이나 반바지를 추천해요. 모자와 선글라스도 챙기세요!")
-    elif 20 <= temp < 28:
-        st.write("긴팔셔츠나 얇은 가디건이 적당해요.")
-    elif 10 <= temp < 20:
-        st.write("가벼운 자켓이나 니트가 좋습니다.")
-    elif 0 <= temp < 10:
-        st.write("두꺼운 코트나 패딩을 입는 것이 좋아요.")
-    else:
-        st.write("무척 춥습니다. 두꺼운 패딩에 목도리, 장갑 꼭 챙기세요!")
+st.subheader(f"{country}의 교육 정보")
 
-else:
-    st.write("날씨 정보를 불러오는 데 실패했습니다. API 키를 확인해주세요.")
+for key, value in info.items():
+    st.write(f"**{key}**: {value}")
+
+st.markdown("""
+---
+<p style="text-align:center; color:gray; font-size:small;">
+이 정보는 대표적인 요약 데이터이며, 자세한 내용은 공식 교육청 자료 등을 참고하세요.
+</p>
+""", unsafe_allow_html=True)
+
