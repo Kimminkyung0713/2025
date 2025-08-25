@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
+import plotly.express as px 
 from datetime import datetime, timedelta
 
 st.set_page_config(page_title="실시간 날씨 & 미세먼지 대시보드 🎈", layout="wide")
